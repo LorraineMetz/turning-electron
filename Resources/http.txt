@@ -1,0 +1,12 @@
+
+    server {
+        listen %端口%;
+        server_name %主机%;
+
+        location / {
+            proxy_pass %终点%;
+            proxy_set_header Host $host:$server_port;
+
+            %自定义%
+        }
+    }

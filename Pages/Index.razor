@@ -1,0 +1,339 @@
+﻿@page "/"
+@inject MapsService mapsservice;
+@inject IJSRuntime jsruntime;
+@inject XService xservice;
+
+<div>
+    <div class="toolbar">
+        <button class="button" @onclick="_ => showNewDialog()">
+            <span class="oi oi-plus" aria-hidden="true"></span> 新建
+        </button>
+
+        <button class="button" @onclick="_ => reloadNginx()">
+            <span class="oi oi-reload" aria-hidden="true"></span> 重启Nginx
+        </button>
+        <button class="button" @onclick="async _ => importConf()">
+            <span class="oi oi-data-transfer-upload" aria-hidden="true"></span> 导入配置
+        </button>
+        <button class="button" @onclick="async _ => exportConf()">
+            <span class="oi oi-data-transfer-download" aria-hidden="true"></span> 导出配置
+        </button>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>序号</th>
+                <th>输入流量</th>
+                <th>输出流量</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (mapPairs != null)
+            {
+                for (int i = 0; i < mapPairs.Length; i++)
+                {
+                    string id = mapPairs[i].Id;
+                    <tr>
+                        <td>
+                            @(i+1)
+                        </td>
+                        <td>@mapPairs[i].In</td>
+                        <td>@mapPairs[i].Out</td>
+                        <td>
+                            @if (mapPairs[i].Enabled)
+                            {
+                                <a style="cursor:pointer"
+                                   href="javascript:void(0)"
+                                   @onclick="_=>SetEnabled(id, false)"
+                                   title="点击以禁用">
+                                    已启用
+                                </a>
+                            }
+                            else
+                            {
+                                <a style="cursor:pointer"
+                                   href="javascript:void(0)"
+                                   @onclick="_=>SetEnabled(id, true)"
+                                   title="点击以启用（禁用同名映射）">
+                                    已禁用
+                                </a>
+                            }
+                        </td>
+                        <td>
+                            <a style="cursor:pointer"
+                               href="javascript:void(0)"
+                               @onclick="_=>Delete(id)">
+                                <span class="oi oi-delete"></span> 删除
+                            </a>
+                            &nbsp;
+
+                            <a style="cursor:pointer"
+                               href="javascript:void(0)"
+                               @onclick="_=>Edit(id)">
+                                <span class="oi oi-wrench"></span> 修改
+                            </a>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+
+    @if (newDialogVisible)
+    {
+        <div class="overlay" @onclick="_=>newDialogVisible = false"></div>
+
+        <div class="new-diaglog">
+            <div style="display:flex;flex-direction:row">
+                <div style="flex:1">新建</div>
+                <div>
+                    <a @onclick="_=>newDialogVisible = false">
+                        <span class="oi oi-x" aria-hidden="true"></span>
+                    </a>
+                </div>
+            </div>
+            <div style="flex:1">
+                <div style="margin:10px 0px;">
+                    <label>输入流量</label>
+                    <input style="border:2px solid gray;border-radius:0"
+                           type="text"
+                           @bind-value="newmodelIn"
+                           placeholder="http://abc.com:8000" />
+                    <div style="font-size:.7em;color:gray">
+                        http或https协议开头，可带端口号，域名形式(不能为IP)
+                    </div>
+                </div>
+                <div style="margin:10px 0px;">
+                    <label>输出流量</label>
+                    <input style="border:2px solid gray;border-radius:0"
+                           type="text"
+                           @bind-value="newmodelOut"
+                           placeholder="http://example.com" />
+                    <div style="font-size:.7em;color:gray">
+                        http或https协议开头，可带端口号
+                    </div>
+                </div>
+            </div>
+            <div>
+                <button @onclick="async _=>SaveNew()">
+                    <span class="oi oi-check" aria-hidden="true"></span> 确定
+                </button>
+            </div>
+        </div>
+    }
+
+
+    @if (editDialogVisible)
+    {
+        <div class="overlay" @onclick="_=>editDialogVisible = false"></div>
+
+        <div class="edit-diaglog">
+            <div style="display:flex;flex-direction:row">
+                <div style="flex:1">编辑</div>
+                <div>
+                    <a @onclick="_=>editDialogVisible = false">
+                        <span class="oi oi-x" aria-hidden="true"></span>
+                    </a>
+                </div>
+            </div>
+            <div style="flex:1">
+                <div style="margin:10px 0px;">
+                    <label>输入流量</label>
+                    <input style="border:2px solid gray;border-radius:0"
+                           type="text"
+                           @bind-value="editpair.In"
+                           placeholder="http://abc.com:8000" />
+                    <div style="font-size:.7em;color:gray">
+                        http或https协议开头，可带端口号，域名形式(不能为IP)
+                    </div>
+                </div>
+                <div style="margin:10px 0px;">
+                    <label>输出流量</label>
+                    <input style="border:2px solid gray;border-radius:0"
+                           type="text"
+                           @bind-value="editpair.Out"
+                           placeholder="http://example.com" />
+                    <div style="font-size:.7em;color:gray">
+                        http或https协议开头，可带端口号
+                    </div>
+                </div>
+
+                <div style="margin:10px 0px;">
+                    <div>自定义内容</div>
+                    <textarea style="border:2px solid gray;border-radius:0;width:100%"
+                              type="text"
+                              @bind="editpair.UserSetting"
+                              placeholder="自定义 nginx location 内片段" />
+                </div>
+            </div>
+            <div>
+                <button @onclick="_=>SaveEdit()">
+                    <span class="oi oi-check" aria-hidden="true"></span> 确定
+                </button>
+            </div>
+        </div>
+    }
+
+
+    <style scoped>
+        table {
+            width: 100%;
+            border: 1px solid #ccc;
+            margin-top: 10px;
+        }
+
+            table thead {
+                background-color: #ccc;
+                font-weight: 700;
+            }
+
+            table td {
+                border-right: 1px solid #ccc;
+                text-align: center;
+            }
+
+            table tr {
+                border-bottom: 1px solid #ccc;
+            }
+
+        .toolbar {
+            text-align: right;
+            width: 100%;
+        }
+
+
+            .toolbar .button {
+                font-size: .9em;
+                font-weight: 100;
+            }
+
+        .overlay {
+            background-color: rgba(0, 0, 0, .35);
+            position: fixed;
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 8888;
+        }
+
+
+        .new-diaglog, .edit-diaglog {
+            z-index: 9999;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            background-color: #fff;
+            transform: translate(-50%, -50%);
+            border: 2px solid black;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+
+</div>
+
+@code {
+    MapPair[] mapPairs;
+
+    bool newDialogVisible = false;
+    bool editDialogVisible = false;
+
+    string newmodelIn = "";
+    string newmodelOut = "";
+
+    MapPair editpair = new MapPair();
+
+    protected override Task OnInitializedAsync()
+    {
+        mapPairs = mapsservice.GetList();
+
+        mapsservice.Updated += (s, e) =>
+        {
+            mapPairs = mapsservice.GetList();
+        };
+
+        return base.OnInitializedAsync();
+    }
+
+
+    void SetEnabled(string id, bool enabled)
+    {
+        mapsservice.Update(id, enabled);
+    }
+
+    void Delete(string id)
+    {
+        mapsservice.Remove(id);
+    }
+
+    void Edit(string id)
+    {
+        editpair = mapPairs.FirstOrDefault(i => i.Id == id);
+        editDialogVisible = true;
+    }
+
+    void reloadNginx()
+    {
+        if (mapPairs != null && mapPairs.Length > 0)
+        {
+
+            NginxService.Stop();
+            NginxService.Start();
+        }
+    }
+
+    void showNewDialog()
+    {
+        newmodelIn = "";
+        newmodelOut = "";
+        newDialogVisible = true;
+    }
+
+    async void SaveNew()
+    {
+        try
+        {
+
+            await mapsservice.Add(newmodelIn, newmodelOut);
+            newDialogVisible = false;
+            await InvokeAsync(this.StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            await jsruntime.InvokeVoidAsync("alert", new string[] { ex.Message });
+        }
+    }
+
+
+    void SaveEdit()
+    {
+        try
+        {
+            mapsservice.Update(editpair);
+            editDialogVisible = false;
+        }
+        catch (Exception ex)
+        {
+            jsruntime.InvokeVoidAsync("alert", new string[] { ex.Message });
+
+        }
+    }
+
+
+    async void exportConf()
+    {
+        await xservice.ExportConfig();
+        await InvokeAsync(this.StateHasChanged);
+    }
+
+    async void importConf()
+    {
+        await xservice.ImportConfig();
+        mapsservice.Load();
+        await InvokeAsync(this.StateHasChanged);
+    }
+}

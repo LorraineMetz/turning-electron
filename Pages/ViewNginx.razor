@@ -1,0 +1,34 @@
+﻿@page "/nginx"
+@inject NConfigGenerator gen;
+
+<div class="nginx-view">
+    <textarea>@nginx</textarea>
+
+    <style scoped>
+        .nginx-view {
+            width: 100%;
+            height: 100%;
+        }
+
+            .nginx-view textarea {
+                width: 100%;
+                min-height: 70vh;
+                border-radius: 0px;
+                border: 2px solid black;
+            }
+    </style>
+</div>
+
+@code {
+    string nginx;
+
+    protected override Task OnInitializedAsync()
+    {
+        nginx = gen.NginxConf;
+        gen.ModifyPatched += (s, e) =>
+        {
+            nginx = gen.NginxConf;
+        };
+        return base.OnInitializedAsync();
+    }
+}

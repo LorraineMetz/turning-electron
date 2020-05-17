@@ -1,0 +1,40 @@
+﻿@page "/conf"
+@inject UserConfiguration config
+
+@if (isstartnginxonboot)
+{
+    <div>
+
+        <input type="checkbox"
+               @onchange="_=>SetNginxStartMode()"
+               checked /> 软件启动时立即启动nginx
+    </div>
+}
+else
+{
+<div>
+
+    <input type="checkbox"
+           @onchange="_=>SetNginxStartMode()" /> 软件启动时立即启动nginx
+</div>
+
+}
+
+@code {
+    bool isstartnginxonboot = false;
+
+    protected override Task OnInitializedAsync()
+    {
+        isstartnginxonboot = config.StartNginxOnBoot;
+        config.Updated += (s, e) =>
+        {
+            isstartnginxonboot = config.StartNginxOnBoot;
+        };
+        return base.OnInitializedAsync();
+    }
+
+    void SetNginxStartMode()
+    {
+        config.StartNginxOnBoot = !isstartnginxonboot;
+    }
+}

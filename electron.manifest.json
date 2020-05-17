@@ -1,0 +1,41 @@
+{
+  "executable": "turning-electron",
+  "splashscreen": {
+    "imageFile": ""
+  },
+  "name": "Turning",
+  "author": "lorraine metz(https://github.com/LorraineMetz)",
+  "singleInstance": true,
+  "build": {
+    "appId": "com.taivee.apps.turning",
+    "productName": "Turning",
+    "copyright": "Copyright © 2020",
+    "buildVersion": "1.0.0",
+    "compression": "maximum",
+    "directories": {
+      "output": "../../../bin/Desktop"
+    },
+    "win": {
+      "icon": "./bin/icon.ico",
+      "requestedExecutionLevel":"requireAdministrator",
+      "target": {
+        "target": "nsis"
+      }
+    },
+    "extraResources": [
+      {
+        "from": "./bin",
+        "to": "bin",
+        "filter": ["**/*"]
+      }
+    ],
+    "files": [
+      {
+        "from": "./ElectronHostHook/node_modules",
+        "to": "ElectronHostHook/node_modules",
+        "filter": ["**/*"]
+      },
+      "**/*"
+    ]
+  }
+}
